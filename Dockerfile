@@ -29,7 +29,7 @@ RUN ct2-transformers-converter --model /merged --output_dir /model/ct2 \
  && rm -rf /merged /root/.cache
 
 FROM nvidia/cuda:12.4.1-cudnn-runtime-ubuntu22.04 AS runtime
-ENV PIP_NO_CACHE_DIR=1 PYTHONUNBUFFERED=1 MODEL_DIR=/model/ct2 COMPUTE=int8_float16 DEVICE=cuda
+ENV PIP_NO_CACHE_DIR=1 PYTHONUNBUFFERED=1 MODEL_DIR=/model/ct2 COMPUTE=float16 DEVICE=cuda
 RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip \
  && rm -rf /var/lib/apt/lists/*
 RUN pip3 install faster-whisper==1.2.1 ctranslate2==4.8.1 runpod
