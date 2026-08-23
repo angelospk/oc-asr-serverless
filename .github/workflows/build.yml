@@ -2,7 +2,16 @@ name: build-and-push
 on:
   push:
     branches: [main]
-  workflow_dispatch: {}
+  workflow_dispatch:
+    inputs:
+      adapter_revision:
+        description: 'Full 40-char HF commit sha of the adapter to bake in'
+        required: false
+        default: '1a03f207e7e9bf46253715234a91eee98fa40505'
+      image_tag:
+        description: 'Extra tag for the image (v1, v2, ...)'
+        required: false
+        default: 'v2'
 
 jobs:
   build:
@@ -29,8 +38,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/build-push-action@v6
+      - id: build
+        uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ github.repository_owner }}/oc-asr-serverless:latest
+          build-args: |
+            ADAPTER_REVISION=${{ inputs.adapter_revision || '1a03f207e7e9bf46253715234a91eee98fa40505' }}
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/oc-asr-serverless:latest
+            ghcr.io/${{ github.repository_owner }}/oc-asr-serverless:${{ inputs.image_tag || 'v2' }}
+
+      # Deploy by digest, not by tag. A tag can be moved onto different bits;
+      # a digest names one image forever.
+      - name: Print image digest
+        run: |
+          echo "DIGEST=${{ steps.build.outputs.digest }}"
+          echo "deploy: ghcr.io/${{ github.repository_owner }}/oc-asr-serverless@${{ steps.build.outputs.digest }}" >> $GITHUB_STEP_SUMMARY
